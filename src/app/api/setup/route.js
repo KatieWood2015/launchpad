@@ -21,10 +21,13 @@ export async function POST(request) {
       targetCompanies: formData.get('targetCompanies')
         ?.split(',').map(c => c.trim()).filter(Boolean),
       coverLetterText: formData.get('coverLetterText'),
-      anthropicApiKey: formData.get('anthropicApiKey'),
-      gmailUser: formData.get('gmailUser'),
-      gmailAppPassword: formData.get('gmailAppPassword'),
-      digestEmail: formData.get('digestEmail'),
+    // Credentials come from environment variables, not the form
+      anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+      gmailUser: process.env.GMAIL_USER,
+      gmailAppPassword: process.env.GMAIL_APP_PASSWORD,
+    // Generate unsubscribe token if not already set
+      unsubscribeToken: Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2),
+      paused: false,
     }
 
     // Handle resume file

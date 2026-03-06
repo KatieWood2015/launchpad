@@ -47,16 +47,33 @@ npm install
 npm run dev  # localhost:3000
 ```
 
-### 2. Complete onboarding
+### 2. Add environment variables
 
-Visit your deployed app (or `localhost:3000`) and complete the 5-step setup:
+In Vercel: go to your project → **Settings** → **Environment Variables** and add:
+
+| Variable | Value |
+|----------|-------|
+| `ANTHROPIC_API_KEY` | From [console.anthropic.com](https://console.anthropic.com) |
+| `GMAIL_USER` | The Gmail address Launchpad sends from |
+| `GMAIL_APP_PASSWORD` | From [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) (requires 2FA) |
+
+For local development, create a `.env.local` file in the project root:
+```
+ANTHROPIC_API_KEY=sk-ant-...
+GMAIL_USER=yourname@gmail.com
+GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
+```
+
+### 3. Complete onboarding
+
+Visit your deployed app and complete the 5-step setup:
 - Profile info and your "why" statement
 - Job preferences (roles, location, salary)
 - Target companies
 - Resume upload (.pdf or .docx) + cover letter template
-- API keys and email delivery
+- Digest delivery email
 
-### 3. Automate with GitHub Actions
+### 4. Automate with GitHub Actions
 
 1. Push to a **private** GitHub repo
 2. Go to Settings → Secrets → Actions → New secret
@@ -67,12 +84,15 @@ To run immediately: Actions tab → Launchpad Daily Digest → Run workflow
 
 ---
 
-## Required API keys
+## Required environment variables
 
-| Key | Where to get it | Cost |
-|-----|----------------|------|
-| Anthropic API key | [console.anthropic.com](https://console.anthropic.com) | ~$0.10/day |
-| Gmail App Password | [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) | Free |
+| Variable | Where to get it | Cost |
+|----------|----------------|------|
+| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) | ~$0.10/day |
+| `GMAIL_USER` | Your Gmail address | Free |
+| `GMAIL_APP_PASSWORD` | [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) | Free |
+
+These are set as environment variables in Vercel — never entered by users in the UI.
 
 ---
 

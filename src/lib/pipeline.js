@@ -131,6 +131,12 @@ Return ONLY valid JSON:
 // ─── EMAIL DIGEST ─────────────────────────────────────────────────────────────
 
 export async function sendDigest(profile, { jobs, date }) {
+  // Don't send if paused
+  if (profile.paused) {
+    console.log('Digest skipped — emails paused by user')
+    return
+  }
+
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: { user: profile.gmailUser, pass: profile.gmailAppPassword }
@@ -205,7 +211,15 @@ export async function sendDigest(profile, { jobs, date }) {
     }
   }
 
-  html += `</div><div class="footer">Launchpad · Your personal job search assistant</div></div></body></html>`
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+  const settingsUrl = `${baseUrl}/settings?token=${profile.unsubscribeToken}`
+  const unsubscribeUrl = `${baseUrl}/api/unsubscribe?token=${profile.unsubscribeToken}&action=pause`
+
+  html += `</div><div class="footer">
+    Launchpad · Your personal job search assistant<br>
+    <a href="${settingsUrl}" style="color:#aaa;">Manage preferences</a> &nbsp;·&nbsp;
+    <a href="${unsubscribeUrl}" style="color:#aaa;">Unsubscribe</a>
+  </div></div></body></html>`
 
   await transporter.sendMail({
     from: `Launchpad <${profile.gmailUser}>`,

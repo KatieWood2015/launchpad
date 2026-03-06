@@ -112,18 +112,15 @@ export default function Setup() {
     name: '',
     email: '',
     whyStatement: '',
-    targetRoles: 'Strategy & Analytics Manager, Growth PM, Technical Program Manager, Operations Manager',
-    location: 'SF Bay Area',
+    targetRoles: '',
+    location: '',
     remotePreference: 'hybrid',
-    minSalary: '180000',
-    levelPreference: 'Open — let the role decide',
-    culturePriorities: 'Work-life balance, strong maternity leave, collaborative culture, mission-driven',
-    industriesToAvoid: 'crypto, defense, tobacco',
-    targetCompanies: 'Anthropic, Google, OpenAI, Ramp, Plaid, Databricks',
+    minSalary: '',
+    levelPreference: '',
+    culturePriorities: '',
+    industriesToAvoid: '',
+    targetCompanies: '',
     coverLetterText: '',
-    anthropicApiKey: '',
-    gmailUser: '',
-    gmailAppPassword: '',
     digestEmail: '',
   })
   const [resumeFile, setResumeFile] = useState(null)
@@ -135,7 +132,7 @@ export default function Setup() {
     if (step === 1) return form.targetRoles && form.location && form.minSalary
     if (step === 2) return form.targetCompanies
     if (step === 3) return resumeFile && form.coverLetterText
-    if (step === 4) return form.anthropicApiKey && form.gmailUser && form.gmailAppPassword && form.digestEmail
+    if (step === 4) return form.digestEmail
     return true
   }
 
@@ -300,35 +297,32 @@ ${form.name || 'Your Name'}`} />
     // Step 4: Delivery
     <div key="delivery">
       <h2 style={{ fontFamily: 'DM Serif Display, serif', fontSize: 28, marginBottom: 8 }}>
-        Set up delivery
+        Where should we send your digest?
       </h2>
       <p style={{ color: '#888880', marginBottom: 36, fontSize: 14 }}>
-        Launchpad emails you every weekday morning with matches and tailored documents attached.
+        Launchpad emails you every weekday morning with matched jobs and tailored documents attached.
       </p>
-      <Field label="Anthropic API key" hint={<>Get yours at <a href="https://console.anthropic.com" target="_blank" style={{ color: '#e8d5a3' }}>console.anthropic.com</a> · ~$0.10/day</>}>
-        <input style={inputStyle} type="password" value={form.anthropicApiKey}
-          onChange={e => update('anthropicApiKey', e.target.value)}
-          placeholder="sk-ant-..." />
-      </Field>
-      <Field label="Gmail address (sends FROM)" hint="The Gmail account Launchpad will use to send your daily digest.">
-        <input style={inputStyle} type="email" value={form.gmailUser}
-          onChange={e => update('gmailUser', e.target.value)}
-          placeholder="yourname@gmail.com" />
-      </Field>
-      <Field label="Gmail App Password" hint={<>Not your regular password. <a href="https://myaccount.google.com/apppasswords" target="_blank" style={{ color: '#e8d5a3' }}>Generate one here</a> (requires 2FA enabled).</>}>
-        <input style={inputStyle} type="password" value={form.gmailAppPassword}
-          onChange={e => update('gmailAppPassword', e.target.value)}
-          placeholder="xxxx xxxx xxxx xxxx" />
-      </Field>
-      <Field label="Digest delivery email" hint="Where should Launchpad send your daily email? Can be same as above.">
+      <Field label="Digest delivery email" hint="You'll receive your daily job matches here every weekday morning.">
         <input style={inputStyle} type="email" value={form.digestEmail}
           onChange={e => update('digestEmail', e.target.value)}
           placeholder={form.email || 'katie@email.com'} />
       </Field>
+      <div style={{
+        background: '#111111', border: '1px solid #2a2a2a', borderRadius: 8,
+        padding: '20px 24px', marginTop: 8
+      }}>
+        <div style={{ fontSize: 12, color: '#888880', marginBottom: 10, fontFamily: 'DM Mono, monospace', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          🔒 About credentials
+        </div>
+        <p style={{ fontSize: 13, color: '#666660', lineHeight: 1.7 }}>
+          API keys and email credentials are configured securely as environment variables on the server —
+          not entered here. If you're self-hosting, see the README for setup instructions.
+        </p>
+      </div>
       {error && (
         <div style={{
           background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)',
-          borderRadius: 6, padding: '12px 16px', color: '#f87171', fontSize: 13, marginTop: 8
+          borderRadius: 6, padding: '12px 16px', color: '#f87171', fontSize: 13, marginTop: 16
         }}>
           {error}
         </div>
