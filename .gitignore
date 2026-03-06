@@ -1,0 +1,10 @@
+node_modules/
+.next/
+config/profile.json
+config/resume.pdf
+config/resume.docx
+output/
+.env
+.env.local
+.DS_Store
+*.log

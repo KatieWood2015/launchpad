@@ -1,0 +1,35 @@
+name: Launchpad Daily Digest
+
+on:
+  schedule:
+    - cron: '0 15 * * 1-5'  # 7:00 AM PT, Mon–Fri
+  workflow_dispatch:          # Manual trigger from GitHub UI
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm install
+
+      - name: Load profile
+        run: |
+          mkdir -p config
+          echo '${{ secrets.LAUNCHPAD_PROFILE }}' > config/profile.json
+
+      - name: Run Launchpad
+        run: node src/lib/daily.js
+
+      - name: Save output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: launchpad-${{ github.run_id }}
+          path: output/
+          retention-days: 7
