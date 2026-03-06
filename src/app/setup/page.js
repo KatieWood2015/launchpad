@@ -170,16 +170,16 @@ export default function Setup() {
       </p>
       <Field label="Full name">
         <input style={inputStyle} value={form.name} onChange={e => update('name', e.target.value)}
-          placeholder="Katie Wood" />
+          placeholder="Alex Johnson" />
       </Field>
       <Field label="Email address">
         <input style={inputStyle} type="email" value={form.email} onChange={e => update('email', e.target.value)}
-          placeholder="katie@email.com" />
+          placeholder="alex@email.com" />
       </Field>
       <Field label="Your 'why'" hint="1–2 sentences you'd say at the start of an interview. This personalizes your outreach messages.">
         <textarea style={{ ...inputStyle, minHeight: 100 }} value={form.whyStatement}
           onChange={e => update('whyStatement', e.target.value)}
-          placeholder="I love being at the intersection of data and product — finding the growth levers hidden in user behavior and building the systems to act on them." />
+          placeholder="I love building products at the intersection of data and user experience — finding the insights that drive growth and turning them into systems that scale." />
       </Field>
     </div>,
 
@@ -198,7 +198,7 @@ export default function Setup() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Field label="Location">
           <input style={inputStyle} value={form.location} onChange={e => update('location', e.target.value)}
-            placeholder="SF Bay Area" />
+            placeholder="New York, NY" />
         </Field>
         <Field label="Work style">
           <select style={inputStyle} value={form.remotePreference} onChange={e => update('remotePreference', e.target.value)}>
@@ -212,11 +212,11 @@ export default function Setup() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Field label="Min. base salary ($)">
           <input style={inputStyle} type="number" value={form.minSalary}
-            onChange={e => update('minSalary', e.target.value)} placeholder="180000" />
+            onChange={e => update('minSalary', e.target.value)} placeholder="120000" />
         </Field>
         <Field label="Level preference">
           <input style={inputStyle} value={form.levelPreference}
-            onChange={e => update('levelPreference', e.target.value)} placeholder="Open — let the role decide" />
+            onChange={e => update('levelPreference', e.target.value)} placeholder="Mid to senior" />
         </Field>
       </div>
       <Field label="Culture priorities" hint="What matters most in a workplace?">
@@ -242,7 +242,7 @@ export default function Setup() {
       <Field label="Target companies" hint="Comma-separated. Launchpad will also suggest similar companies automatically.">
         <textarea style={{ ...inputStyle, minHeight: 120 }} value={form.targetCompanies}
           onChange={e => update('targetCompanies', e.target.value)}
-          placeholder="Anthropic, Google, OpenAI, Ramp, Plaid, Databricks" />
+          placeholder="Stripe, Figma, Notion, Linear, Vercel" />
       </Field>
       <div style={{
         background: '#111111', border: '1px solid #2a2a2a', borderRadius: 8,
@@ -305,7 +305,7 @@ ${form.name || 'Your Name'}`} />
       <Field label="Digest delivery email" hint="You'll receive your daily job matches here every weekday morning.">
         <input style={inputStyle} type="email" value={form.digestEmail}
           onChange={e => update('digestEmail', e.target.value)}
-          placeholder={form.email || 'katie@email.com'} />
+          placeholder={form.email || 'alex@email.com'} />
       </Field>
       <div style={{
         background: '#111111', border: '1px solid #2a2a2a', borderRadius: 8,

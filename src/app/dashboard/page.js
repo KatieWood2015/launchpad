@@ -41,11 +41,18 @@ export default function Dashboard() {
       {/* Nav */}
       <div style={{ borderBottom: '1px solid #1a1a1a', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontFamily: 'DM Serif Display, serif', fontSize: 18 }}>🚀 Launchpad</span>
-        <Link href="/setup">
-          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#888880', cursor: 'pointer' }}>
-            Edit profile →
-          </span>
-        </Link>
+        <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+          <Link href="/settings">
+            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#888880', cursor: 'pointer' }}>
+              Settings
+            </span>
+          </Link>
+          <Link href="/setup">
+            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#888880', cursor: 'pointer' }}>
+              Edit profile →
+            </span>
+          </Link>
+        </div>
       </div>
 
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '60px 24px' }}>
