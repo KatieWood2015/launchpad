@@ -147,6 +147,9 @@ export default function Setup() {
       const res = await fetch('/api/setup', { method: 'POST', body: formData })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Setup failed')
+      if (data.profile) {
+        localStorage.setItem('launchpad_profile', JSON.stringify(data.profile))
+      }
       router.push('/dashboard')
     } catch (e) {
       setError(e.message)

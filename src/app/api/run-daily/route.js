@@ -2,9 +2,24 @@ import { NextResponse } from 'next/server'
 import { readFile } from 'fs/promises'
 import { getProfilePath, ensureOutputDir } from '../../../lib/paths.js'
 
-export async function POST() {
+export async function POST(request) {
   try {
-    const profile = JSON.parse(await readFile(getProfilePath(), 'utf8'))
+    let profile
+    try {
+      const body = await request.json()
+      if (body?.profile) {
+        profile = body.profile
+      }
+    } catch {}
+
+    if (!profile) {
+      profile = JSON.parse(await readFile(getProfilePath(), 'utf8'))
+    }
+
+    // Inject server-side secrets (never trust client-sent credentials)
+    profile.anthropicApiKey = process.env.ANTHROPIC_API_KEY
+    profile.gmailUser = process.env.GMAIL_USER
+    profile.gmailAppPassword = process.env.GMAIL_APP_PASSWORD
 
     const { findJobs } = await import('../../../lib/jobSearch.js')
     const { tailorResume } = await import('../../../lib/resumeTailor.js')

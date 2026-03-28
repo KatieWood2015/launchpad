@@ -15,7 +15,13 @@ export default function Dashboard() {
     setRunning(true)
     setRunStatus(null)
     try {
-      const res = await fetch('/api/run-daily', { method: 'POST' })
+      const stored = localStorage.getItem('launchpad_profile')
+      const body = stored ? { profile: JSON.parse(stored) } : {}
+      const res = await fetch('/api/run-daily', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
       const data = await res.json()
       setRunStatus(data.ok ? 'success' : 'error')
     } catch {
