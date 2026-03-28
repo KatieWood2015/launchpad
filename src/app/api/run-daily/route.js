@@ -1,19 +1,17 @@
 import { NextResponse } from 'next/server'
-import { readFile, mkdir } from 'fs/promises'
-import path from 'path'
+import { readFile } from 'fs/promises'
+import { getProfilePath, ensureOutputDir } from '../../../lib/paths.js'
 
 export async function POST() {
   try {
-    const profilePath = path.join(process.cwd(), 'config', 'profile.json')
-    const profile = JSON.parse(await readFile(profilePath, 'utf8'))
+    const profile = JSON.parse(await readFile(getProfilePath(), 'utf8'))
 
     const { findJobs } = await import('../../../lib/jobSearch.js')
     const { tailorResume } = await import('../../../lib/resumeTailor.js')
     const { tailorCoverLetter, findOutreachTargets, sendDigest } = await import('../../../lib/pipeline.js')
 
     const today = new Date().toISOString().split('T')[0]
-    const outputDir = path.join(process.cwd(), 'output', today)
-    await mkdir(outputDir, { recursive: true })
+    const outputDir = await ensureOutputDir(today)
 
     const jobResults = await findJobs(profile)
     if (!jobResults.jobs?.length) {
