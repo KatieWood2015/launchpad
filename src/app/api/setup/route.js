@@ -22,6 +22,7 @@ export async function POST(request) {
       targetCompanies: formData.get('targetCompanies')
         ?.split(',').map(c => c.trim()).filter(Boolean),
       coverLetterText: formData.get('coverLetterText'),
+      digestEmail: formData.get('digestEmail'),
       anthropicApiKey: process.env.ANTHROPIC_API_KEY,
       gmailUser: process.env.GMAIL_USER,
       gmailAppPassword: process.env.GMAIL_APP_PASSWORD,
@@ -46,11 +47,14 @@ export async function POST(request) {
       profile.resumeText = await extractResumeText(resumePath, ext)
     }
 
-    // Save profile
+    // Save profile to disk (works locally and in GitHub Actions)
     await ensureConfigDir()
     await writeFile(getProfilePath(), JSON.stringify(profile, null, 2))
 
-    return NextResponse.json({ ok: true })
+    // Return profile (without secrets) so the client can store it for later use.
+    // On Vercel, /tmp is ephemeral and may not survive between requests.
+    const { anthropicApiKey, gmailUser, gmailAppPassword, ...clientProfile } = profile
+    return NextResponse.json({ ok: true, profile: clientProfile })
   } catch (error) {
     console.error('Setup error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })

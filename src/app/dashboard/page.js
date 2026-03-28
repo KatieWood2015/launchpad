@@ -5,21 +5,41 @@ import Link from 'next/link'
 export default function Dashboard() {
   const [visible, setVisible] = useState(false)
   const [runStatus, setRunStatus] = useState(null)
+  const [runError, setRunError] = useState('')
   const [running, setRunning] = useState(false)
+  const [hasProfile, setHasProfile] = useState(true)
 
   useEffect(() => {
     setVisible(true)
+    setHasProfile(!!localStorage.getItem('launchpad_profile'))
   }, [])
 
   const triggerRun = async () => {
     setRunning(true)
     setRunStatus(null)
+    setRunError('')
     try {
-      const res = await fetch('/api/run-daily', { method: 'POST' })
+      const stored = localStorage.getItem('launchpad_profile')
+      if (!stored) {
+        setRunStatus('no_profile')
+        setRunning(false)
+        return
+      }
+      const res = await fetch('/api/run-daily', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: JSON.parse(stored) }),
+      })
       const data = await res.json()
-      setRunStatus(data.ok ? 'success' : 'error')
-    } catch {
+      if (data.ok) {
+        setRunStatus('success')
+      } else {
+        setRunStatus('error')
+        setRunError(data.error || 'Unknown error')
+      }
+    } catch (e) {
       setRunStatus('error')
+      setRunError(e.message || 'Network error')
     }
     setRunning(false)
   }
@@ -56,6 +76,15 @@ export default function Dashboard() {
       </div>
 
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '60px 24px' }}>
+
+        {!hasProfile && (
+          <div style={{
+            background: 'rgba(232,213,163,0.08)', border: '1px solid rgba(232,213,163,0.3)',
+            borderRadius: 8, padding: '14px 20px', marginBottom: 24, fontSize: 13, color: '#e8d5a3',
+          }}>
+            Your profile needs to be refreshed. <Link href="/setup" style={{ color: '#e8d5a3', textDecoration: 'underline', fontWeight: 600 }}>Re-run setup</Link> to enable the daily run.
+          </div>
+        )}
 
         {/* Success state */}
         <div style={{
@@ -106,13 +135,22 @@ export default function Dashboard() {
               ✅ Done! Check your inbox for the digest.
             </div>
           )}
+          {runStatus === 'no_profile' && (
+            <div style={{
+              background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)',
+              borderRadius: 8, padding: '12px 20px', color: '#f87171', fontSize: 13,
+              maxWidth: 400, margin: '16px auto 0'
+            }}>
+              Profile not found. Please <Link href="/setup" style={{ color: '#f87171', textDecoration: 'underline' }}>re-run setup</Link> to save your profile.
+            </div>
+          )}
           {runStatus === 'error' && (
             <div style={{
               background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)',
               borderRadius: 8, padding: '12px 20px', color: '#f87171', fontSize: 13,
-              maxWidth: 360, margin: '16px auto 0'
+              maxWidth: 400, margin: '16px auto 0'
             }}>
-              Something went wrong. Check your API keys in setup.
+              Something went wrong{runError ? `: ${runError}` : '. Check your API keys in setup.'}
             </div>
           )}
         </div>
