@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { readFile, writeFile } from 'fs/promises'
-import path from 'path'
+import { getProfilePath } from '../../../lib/paths.js'
 
 export async function GET(request) {
   try {
@@ -8,7 +8,7 @@ export async function GET(request) {
     const token = searchParams.get('token')
     const action = searchParams.get('action') || 'pause'
 
-    const profilePath = path.join(process.cwd(), 'config', 'profile.json')
+    const profilePath = getProfilePath()
     const profile = JSON.parse(await readFile(profilePath, 'utf8'))
 
     // Validate token

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
+import { writeFile } from 'fs/promises'
 import path from 'path'
+import { ensureConfigDir, getProfilePath } from '../../../lib/paths.js'
 
 export async function POST(request) {
   try {
@@ -21,11 +22,9 @@ export async function POST(request) {
       targetCompanies: formData.get('targetCompanies')
         ?.split(',').map(c => c.trim()).filter(Boolean),
       coverLetterText: formData.get('coverLetterText'),
-    // Credentials come from environment variables, not the form
       anthropicApiKey: process.env.ANTHROPIC_API_KEY,
       gmailUser: process.env.GMAIL_USER,
       gmailAppPassword: process.env.GMAIL_APP_PASSWORD,
-    // Generate unsubscribe token if not already set
       unsubscribeToken: Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2),
       paused: false,
     }
@@ -33,8 +32,7 @@ export async function POST(request) {
     // Handle resume file
     const resumeFile = formData.get('resume')
     if (resumeFile && resumeFile.size > 0) {
-      const configDir = path.join(process.cwd(), 'config')
-      await mkdir(configDir, { recursive: true })
+      const configDir = await ensureConfigDir()
 
       const bytes = await resumeFile.arrayBuffer()
       const buffer = Buffer.from(bytes)
@@ -49,12 +47,8 @@ export async function POST(request) {
     }
 
     // Save profile
-    const configDir = path.join(process.cwd(), 'config')
-    await mkdir(configDir, { recursive: true })
-    await writeFile(
-      path.join(configDir, 'profile.json'),
-      JSON.stringify(profile, null, 2)
-    )
+    await ensureConfigDir()
+    await writeFile(getProfilePath(), JSON.stringify(profile, null, 2))
 
     return NextResponse.json({ ok: true })
   } catch (error) {
