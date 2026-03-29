@@ -13,25 +13,30 @@ export async function tailorCoverLetter(profile, job, outputDir) {
 
   const response = await callWithRetry(() => client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 2000,
+    max_tokens: 1500,
     messages: [{
       role: 'user',
-      content: `Create a tailored cover letter for ${profile.name} applying to ${job.title} at ${job.company}.
+      content: `Tailor a cover letter for ${job.title} at ${job.company}. The cover letter MUST fit on a single page.
 
 JOB: ${job.title} at ${job.company}. ${job.description}. Requirements: ${job.keyRequirements.join(', ')}
 
-CANDIDATE BACKGROUND: ${profile.whyStatement}
+CANDIDATE'S OWN WORDS (use ONLY facts from this): ${profile.whyStatement}
 
-TEMPLATE PARAGRAPHS (select best 3-4 and replace [COMPANY] with "${job.company}" and [ROLE] with "${job.title}"):
+TEMPLATE PARAGRAPHS (select best 2-3):
 ${profile.coverLetterText}
 
-INSTRUCTIONS:
-1. Write an "introParagraph": a 2-3 sentence opening that introduces ${profile.name}, states they are applying for the ${job.title} role at ${job.company}, and briefly explains why they are excited about this opportunity
-2. Select the best 3-4 paragraphs from the template. For each, add a strong topic sentence at the beginning that connects the paragraph's content to the specific role requirements. Do NOT rewrite the rest of the paragraph — only add the topic sentence and swap [COMPANY]/[ROLE] placeholders.
-3. Include a closing
+CRITICAL RULES:
+- DO NOT invent, fabricate, or hallucinate ANY details about the candidate (no years of experience, no specific skills, no achievements unless stated in their own words above)
+- The intro paragraph must say "I'm a..." or "I'm an..." — do NOT start with "I'm ${profile.name}" or include the candidate's name in the intro
+- The intro should state what kind of professional they are and that they are applying for the [ROLE] at [COMPANY], using ONLY facts from the candidate's own words above
+- Select 2-3 paragraphs from the template (not more — must fit one page)
+- For each selected paragraph, add ONE topic sentence at the start connecting it to the job requirements
+- Replace [COMPANY] with "${job.company}" and [ROLE] with "${job.title}"
+- Do NOT rewrite the template paragraphs — only add the topic sentence and swap placeholders
+- Keep the total cover letter SHORT enough to fit on one page
 
 Return ONLY JSON:
-{"salutation":"Dear Hiring Team at ${job.company},","introParagraph":"2-3 sentence intro about who ${profile.name} is and why they're applying for this role","paragraphs":["topic sentence + template paragraph 1","topic sentence + template paragraph 2","topic sentence + template paragraph 3"],"closing":"Sincerely,","candidateName":"${profile.name}"}`
+{"salutation":"Dear Hiring Team at ${job.company},","introParagraph":"I'm a... 2 sentences max, no candidate name, no invented details","paragraphs":["topic sentence + template paragraph","topic sentence + template paragraph"],"closing":"Sincerely,","candidateName":"${profile.name}"}`
     }]
   }))
 
@@ -151,8 +156,9 @@ export async function sendDigest(profile, { jobs, date }) {
   for (const job of jobs) {
     const score = job.matchScore || null
     const scoreColor = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#f97316'
+    const scoreLabel = score >= 80 ? 'Strong fit' : score >= 60 ? 'Moderate fit' : 'Stretch'
     html += `<div class="job">
-      <div class="jh"><h2>${job.title}${score ? `<span style="float:right;background:${scoreColor};color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700;">${score}% match</span>` : ''}</h2>
+      <div class="jh"><h2>${job.title}${score ? `<span style="float:right;background:${scoreColor};color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700;">${score}% · ${scoreLabel}</span>` : ''}</h2>
         <div class="sub">${job.company} · ${job.location}${job.salary ? ` · ${job.salary}` : ''}</div>
       </div>
       <div class="jb">

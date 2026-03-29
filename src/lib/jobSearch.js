@@ -27,7 +27,13 @@ CRITICAL RULES:
 - The job posting URL must be a live, active listing — do NOT include expired, closed, or filled positions
 - If a posting says "no longer accepting applications", "closed", or has a past deadline, SKIP it
 - Verify each posting is live by checking the careers page directly
-- For each job, estimate a match percentage (0-100%) based on how well the candidate's background fits the role requirements
+- For each job, calculate a matchScore (0-100%) using this rubric:
+  * Years of experience: Does the candidate meet the required years? (0-25 points)
+  * Core skills match: How many of the required skills/tools does the candidate have? (0-30 points)
+  * Role relevance: Has the candidate held similar roles or done similar work? (0-25 points)
+  * Level fit: Does the seniority level match? (0-10 points)
+  * Location/remote fit: Does the location preference align? (0-10 points)
+  Be honest — if the candidate lacks required experience, score LOW. A 90%+ should mean the candidate meets nearly all requirements.
 
 INSTRUCTIONS:
 1. Search each company's careers/jobs page for open ${profile.targetRoles} positions
