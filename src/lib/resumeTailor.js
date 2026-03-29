@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { callWithRetry } from './rateLimitHelper.js'
 import { Document, Packer, Paragraph, TextRun, AlignmentType, LevelFormat, BorderStyle } from 'docx'
 import { writeFile } from 'fs/promises'
 import path from 'path'
@@ -6,8 +7,8 @@ import path from 'path'
 export async function tailorResume(profile, job, outputDir) {
   const client = new Anthropic({ apiKey: profile.anthropicApiKey })
 
-  const response = await client.messages.create({
-    model: 'claude-haiku-3-20240307',
+  const response = await callWithRetry(() => client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 2000,
     messages: [{
       role: 'user',
@@ -19,7 +20,7 @@ ${profile.resumeText}
 Return ONLY JSON:
 {"sections":[{"type":"header","name":"...","email":"...","phone":"...","address":"..."},{"type":"sectionTitle","text":"EDUCATION"},{"type":"role","company":"...","title":"...","location":"...","dates":"...","bullets":["exact bullet"]}],"bulletsRemoved":3,"removalReason":"brief"}`
     }]
-  })
+  }))
 
   let structured
   try {

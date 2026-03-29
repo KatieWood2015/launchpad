@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { callWithRetry } from './rateLimitHelper.js'
 import { Document, Packer, Paragraph, TextRun } from 'docx'
 import { writeFile, readFile } from 'fs/promises'
 import { existsSync } from 'fs'
@@ -10,8 +11,8 @@ import nodemailer from 'nodemailer'
 export async function tailorCoverLetter(profile, job, outputDir) {
   const client = new Anthropic({ apiKey: profile.anthropicApiKey })
 
-  const response = await client.messages.create({
-    model: 'claude-haiku-3-20240307',
+  const response = await callWithRetry(() => client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 1500,
     messages: [{
       role: 'user',
@@ -25,7 +26,7 @@ ${profile.coverLetterText}
 Return ONLY JSON:
 {"salutation":"Dear Hiring Team at ${job.company},","paragraphs":["p1","p2","p3"],"closing":"Sincerely,","candidateName":"${profile.name}"}`
     }]
-  })
+  }))
 
   let structured
   try {
@@ -66,8 +67,8 @@ Return ONLY JSON:
 export async function findOutreachTargets(profile, job) {
   const client = new Anthropic({ apiKey: profile.anthropicApiKey })
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await callWithRetry(() => client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 1500,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }],
     messages: [{
@@ -77,7 +78,7 @@ export async function findOutreachTargets(profile, job) {
 Return ONLY JSON:
 {"contacts":[{"name":"Name","title":"Title","type":"recruiter|hiring_manager|peer","linkedinUrl":"url or null","whyReach":"one sentence","message":"short message"}],"searchNote":"brief"}`
     }]
-  })
+  }))
 
   try {
     let text = ''
