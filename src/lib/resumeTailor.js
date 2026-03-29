@@ -7,36 +7,17 @@ export async function tailorResume(profile, job, outputDir) {
   const client = new Anthropic({ apiKey: profile.anthropicApiKey })
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 3000,
+    model: 'claude-haiku-3-20240307',
+    max_tokens: 2000,
     messages: [{
       role: 'user',
-      content: `You are a resume expert. Select and order resume bullets to best match a job description.
-
-STRICT RULES:
-1. Do NOT reword any bullet. Copy bullets EXACTLY as written.
-2. Only REMOVE bullets to fit 1 page
-3. REORDER bullets within each role — most relevant first
-4. Keep all headers, company names, dates, education, and contact info
-
-JOB:
-Company: ${job.company}
-Title: ${job.title}
-Requirements: ${job.keyRequirements.join(', ')}
+      content: `Reorder and trim resume bullets for: ${job.title} at ${job.company}. Requirements: ${job.keyRequirements.join(', ')}. Copy bullets EXACTLY, only reorder/remove to fit 1 page.
 
 RESUME:
 ${profile.resumeText}
 
-Return ONLY valid JSON:
-{
-  "sections": [
-    { "type": "header", "name": "...", "email": "...", "phone": "...", "address": "..." },
-    { "type": "sectionTitle", "text": "EDUCATION" },
-    { "type": "role", "company": "...", "title": "...", "location": "...", "dates": "...", "bullets": ["exact bullet", "exact bullet"] }
-  ],
-  "bulletsRemoved": 3,
-  "removalReason": "brief explanation"
-}`
+Return ONLY JSON:
+{"sections":[{"type":"header","name":"...","email":"...","phone":"...","address":"..."},{"type":"sectionTitle","text":"EDUCATION"},{"type":"role","company":"...","title":"...","location":"...","dates":"...","bullets":["exact bullet"]}],"bulletsRemoved":3,"removalReason":"brief"}`
     }]
   })
 

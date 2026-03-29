@@ -11,33 +11,19 @@ export async function tailorCoverLetter(profile, job, outputDir) {
   const client = new Anthropic({ apiKey: profile.anthropicApiKey })
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 2000,
+    model: 'claude-haiku-3-20240307',
+    max_tokens: 1500,
     messages: [{
       role: 'user',
-      content: `Tailor this cover letter template for a specific job.
+      content: `Select best 3-4 paragraphs from template for ${job.title} at ${job.company}. Replace [COMPANY] with "${job.company}" and [ROLE] with "${job.title}". Do NOT rewrite.
 
-RULES:
-1. Select the best 3-4 paragraphs from the template
-2. Replace [COMPANY] with "${job.company}" and [ROLE] with "${job.title}"
-3. Do NOT rewrite paragraphs — only swap placeholders and select best fit
-
-JOB:
-Company: ${job.company}
-Title: ${job.title}
-Description: ${job.description}
-Requirements: ${job.keyRequirements.join(', ')}
+JOB: ${job.title} at ${job.company}. ${job.description}
 
 TEMPLATE:
 ${profile.coverLetterText}
 
-Return ONLY valid JSON:
-{
-  "salutation": "Dear Hiring Team at ${job.company},",
-  "paragraphs": ["paragraph 1 text", "paragraph 2 text", "paragraph 3 text"],
-  "closing": "Sincerely,",
-  "candidateName": "${profile.name}"
-}`
+Return ONLY JSON:
+{"salutation":"Dear Hiring Team at ${job.company},","paragraphs":["p1","p2","p3"],"closing":"Sincerely,","candidateName":"${profile.name}"}`
     }]
   })
 
@@ -82,37 +68,14 @@ export async function findOutreachTargets(profile, job) {
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 2000,
-    tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+    max_tokens: 1500,
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }],
     messages: [{
       role: 'user',
-      content: `Find 2 people at ${job.company} to reach out to on LinkedIn for a ${job.title} role.
+      content: `Find 2 LinkedIn contacts at ${job.company} for a ${job.title} role: 1 recruiter, 1 hiring manager. Draft short connection messages (<300 chars) from ${profile.name}.
 
-CANDIDATE:
-Name: ${profile.name}
-Background: Strategy & Analytics, PLG at Asana, Capital One analyst, HBS MBA
-Why: ${profile.whyStatement}
-
-Search for:
-1. A recruiter or talent person at ${job.company}
-2. A hiring manager or peer in a similar role
-
-For each, draft a SHORT LinkedIn connection message (under 300 chars) that sounds genuine, not generic.
-
-Return ONLY valid JSON:
-{
-  "contacts": [
-    {
-      "name": "Name",
-      "title": "Their Title",
-      "type": "recruiter|hiring_manager|peer",
-      "linkedinUrl": "url or null",
-      "whyReach": "one sentence",
-      "message": "short personal message under 300 chars"
-    }
-  ],
-  "searchNote": "brief note on search quality"
-}`
+Return ONLY JSON:
+{"contacts":[{"name":"Name","title":"Title","type":"recruiter|hiring_manager|peer","linkedinUrl":"url or null","whyReach":"one sentence","message":"short message"}],"searchNote":"brief"}`
     }]
   })
 
