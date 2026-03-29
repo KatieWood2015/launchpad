@@ -13,18 +13,25 @@ export async function tailorCoverLetter(profile, job, outputDir) {
 
   const response = await callWithRetry(() => client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1500,
+    max_tokens: 2000,
     messages: [{
       role: 'user',
-      content: `Select best 3-4 paragraphs from template for ${job.title} at ${job.company}. Replace [COMPANY] with "${job.company}" and [ROLE] with "${job.title}". Do NOT rewrite.
+      content: `Create a tailored cover letter for ${profile.name} applying to ${job.title} at ${job.company}.
 
-JOB: ${job.title} at ${job.company}. ${job.description}
+JOB: ${job.title} at ${job.company}. ${job.description}. Requirements: ${job.keyRequirements.join(', ')}
 
-TEMPLATE:
+CANDIDATE BACKGROUND: ${profile.whyStatement}
+
+TEMPLATE PARAGRAPHS (select best 3-4 and replace [COMPANY] with "${job.company}" and [ROLE] with "${job.title}"):
 ${profile.coverLetterText}
 
+INSTRUCTIONS:
+1. Write an "introParagraph": a 2-3 sentence opening that introduces ${profile.name}, states they are applying for the ${job.title} role at ${job.company}, and briefly explains why they are excited about this opportunity
+2. Select the best 3-4 paragraphs from the template. For each, add a strong topic sentence at the beginning that connects the paragraph's content to the specific role requirements. Do NOT rewrite the rest of the paragraph — only add the topic sentence and swap [COMPANY]/[ROLE] placeholders.
+3. Include a closing
+
 Return ONLY JSON:
-{"salutation":"Dear Hiring Team at ${job.company},","paragraphs":["p1","p2","p3"],"closing":"Sincerely,","candidateName":"${profile.name}"}`
+{"salutation":"Dear Hiring Team at ${job.company},","introParagraph":"2-3 sentence intro about who ${profile.name} is and why they're applying for this role","paragraphs":["topic sentence + template paragraph 1","topic sentence + template paragraph 2","topic sentence + template paragraph 3"],"closing":"Sincerely,","candidateName":"${profile.name}"}`
     }]
   }))
 
@@ -42,12 +49,17 @@ Return ONLY JSON:
   const children = [
     new Paragraph({ spacing: { after: 240 }, children: [new TextRun({ text: today, size: 22, font: 'Calibri' })] }),
     new Paragraph({ spacing: { after: 240 }, children: [new TextRun({ text: structured.salutation, size: 22, font: 'Calibri' })] }),
+  ]
+  if (structured.introParagraph) {
+    children.push(new Paragraph({ spacing: { after: 240 }, children: [new TextRun({ text: structured.introParagraph, size: 22, font: 'Calibri' })] }))
+  }
+  children.push(
     ...structured.paragraphs.map(para =>
       new Paragraph({ spacing: { after: 240 }, children: [new TextRun({ text: para, size: 22, font: 'Calibri' })] })
     ),
     new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: structured.closing, size: 22, font: 'Calibri' })] }),
     new Paragraph({ children: [new TextRun({ text: structured.candidateName, size: 22, font: 'Calibri' })] })
-  ]
+  )
 
   const doc = new Document({
     sections: [{
@@ -127,7 +139,7 @@ export async function sendDigest(profile, { jobs, date }) {
     .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#aaa;margin:16px 0 8px;}
     .contact{border:1px solid #eee;border-radius:8px;padding:14px;margin:8px 0;}
     .msg{background:#f9f9f9;border-radius:6px;padding:10px;margin-top:8px;font-size:12px;font-style:italic;color:#555;}
-    .btn{display:inline-block;background:#0a0a0a;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:500;margin-top:12px;}
+    .btn{display:inline-block;background:#0a0a0a;color:#ffffff;padding:10px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:700;margin-top:12px;}
     .lnk{color:#0077b5;font-size:12px;text-decoration:none;}
     .footer{text-align:center;color:#bbb;font-size:11px;padding:20px;}
   </style></head><body><div class="wrap">
@@ -137,8 +149,10 @@ export async function sendDigest(profile, { jobs, date }) {
   const attachments = []
 
   for (const job of jobs) {
+    const score = job.matchScore || null
+    const scoreColor = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#f97316'
     html += `<div class="job">
-      <div class="jh"><h2>${job.title}</h2>
+      <div class="jh"><h2>${job.title}${score ? `<span style="float:right;background:${scoreColor};color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700;">${score}% match</span>` : ''}</h2>
         <div class="sub">${job.company} · ${job.location}${job.salary ? ` · ${job.salary}` : ''}</div>
       </div>
       <div class="jb">
@@ -146,7 +160,7 @@ export async function sendDigest(profile, { jobs, date }) {
         <div class="match"><strong>Why this matches you:</strong> ${job.whyMatch}</div>
         <div class="label">Key Requirements</div>
         <div>${job.keyRequirements.map(r => `<span class="tag">${r}</span>`).join('')}</div>
-        <a href="${job.url}" class="btn">View posting →</a>
+        <a href="${job.url}" class="btn" style="color:#ffffff;font-weight:700;">View posting →</a>
         <div class="label">Tailored Documents (attached)</div>
         <div style="font-size:13px;color:#555;">
           📄 resume_${job.company.replace(/\s+/g, '_')}.docx<br>
