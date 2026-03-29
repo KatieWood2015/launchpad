@@ -33,14 +33,19 @@ export async function POST(request) {
       return NextResponse.json({ ok: false, error: 'No jobs found' })
     }
 
+    const delay = (ms) => new Promise(r => setTimeout(r, ms))
+
     const processedJobs = []
     for (const job of jobResults.jobs.slice(0, 2)) {
-      const [resumePath, coverLetterPath, outreach] = await Promise.all([
-        tailorResume(profile, job, outputDir),
-        tailorCoverLetter(profile, job, outputDir),
-        findOutreachTargets(profile, job)
-      ])
+      // Run sequentially to stay under rate limits
+      const resumePath = await tailorResume(profile, job, outputDir)
+      const coverLetterPath = await tailorCoverLetter(profile, job, outputDir)
+      await delay(5000)
+      const outreach = await findOutreachTargets(profile, job)
       processedJobs.push({ ...job, resumePath, coverLetterPath, outreach })
+      if (processedJobs.length < jobResults.jobs.slice(0, 2).length) {
+        await delay(10000)
+      }
     }
 
     await sendDigest(profile, { jobs: processedJobs, date: today })
