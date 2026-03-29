@@ -12,23 +12,28 @@ export async function tailorResume(profile, job, outputDir) {
     max_tokens: 2000,
     messages: [{
       role: 'user',
-      content: `Tailor this resume for: ${job.title} at ${job.company}. Requirements: ${job.keyRequirements.join(', ')}.
+      content: `You are formatting a resume into structured JSON. The output must fit on ONE page.
 
-CRITICAL FORMATTING RULES:
-- Copy ALL text EXACTLY as written — do not rewrite, rephrase, or paraphrase anything
-- Preserve the EXACT section order from the original resume (e.g. Experience before Education, or vice versa)
-- Preserve ALL section headers exactly as they appear (e.g. "EXPERIENCE", "EDUCATION", "SKILLS", "CERTIFICATIONS", etc.)
-- Keep every company name, job title, date range, and location EXACTLY as written
-- Keep ALL education entries, skills sections, and certifications — do NOT remove these
-- Only reorder bullets WITHIN a single role to put the most relevant ones first
-- Only remove bullets if needed to fit one page — remove the least relevant ones
-- Include ALL contact info fields exactly as they appear (name, email, phone, LinkedIn, address, etc.)
+TARGET JOB: ${job.title} at ${job.company}. Requirements: ${job.keyRequirements.join(', ')}
 
-RESUME:
+THE ONLY CHANGE YOU MAY MAKE:
+- Remove some bullet points from work experience roles to fit one page
+- Remove the LEAST relevant bullets to the target job first
+- You may remove up to 30% of bullets if needed
+
+YOU MUST NOT:
+- Rewrite, rephrase, paraphrase, or change ANY text — every word must be copied exactly
+- Change the order of sections, roles, or bullets
+- Remove or change ANY section headers, company names, job titles, dates, or locations
+- Remove ANY education entries, skills, certifications, or non-bullet content
+- Add ANY text that does not appear in the original resume
+- Change contact information in any way
+
+RESUME TO FORMAT:
 ${profile.resumeText}
 
-Return ONLY JSON:
-{"sections":[{"type":"header","name":"...","email":"...","phone":"...","linkedin":"...","address":"..."},{"type":"sectionTitle","text":"EXACT SECTION HEADER"},{"type":"education","school":"...","degree":"...","location":"...","dates":"...","details":["detail 1"]},{"type":"role","company":"...","title":"...","location":"...","dates":"...","bullets":["exact bullet copied verbatim"]},{"type":"skills","text":"exact skills text"}],"bulletsRemoved":0,"removalReason":"brief"}`
+Return ONLY JSON. Every string value must be copied VERBATIM from the resume above:
+{"sections":[{"type":"header","name":"...","email":"...","phone":"...","linkedin":"...","address":"..."},{"type":"sectionTitle","text":"EXACT SECTION HEADER AS IT APPEARS"},{"type":"education","school":"...","degree":"...","location":"...","dates":"...","details":["exact detail"]},{"type":"role","company":"...","title":"...","location":"...","dates":"...","bullets":["exact bullet copied verbatim"]},{"type":"skills","text":"exact skills text as it appears"}],"bulletsRemoved":0,"removalReason":"which bullets were removed and why"}`
     }]
   }))
 
