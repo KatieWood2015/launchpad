@@ -30,7 +30,10 @@ export async function POST(request) {
 
     const jobResults = await findJobs(profile)
     if (!jobResults.jobs?.length) {
-      return NextResponse.json({ ok: false, error: 'No jobs found' })
+      return NextResponse.json({
+        ok: false,
+        error: 'No matching jobs found today. This can happen if careers pages have changed. Try again or add more target companies in setup.'
+      })
     }
 
     const delay = (ms) => new Promise(r => setTimeout(r, ms))
