@@ -137,8 +137,10 @@ export async function sendDigest(profile, { jobs, date }) {
   const attachments = []
 
   for (const job of jobs) {
+    const score = job.matchScore || null
+    const scoreColor = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#f97316'
     html += `<div class="job">
-      <div class="jh"><h2>${job.title}</h2>
+      <div class="jh"><h2>${job.title}${score ? `<span style="float:right;background:${scoreColor};color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700;">${score}% match</span>` : ''}</h2>
         <div class="sub">${job.company} · ${job.location}${job.salary ? ` · ${job.salary}` : ''}</div>
       </div>
       <div class="jb">
