@@ -121,10 +121,15 @@ export default function Dashboard() {
                   borderTopColor: '#888', borderRadius: '50%',
                   animation: 'spin 0.8s linear infinite'
                 }} />
-                Running...
+                Running — this takes 1–2 minutes...
               </>
             ) : '▶ Run now (test)'}
           </button>
+          {!running && !runStatus && (
+            <p style={{ color: '#555550', fontSize: 12, marginTop: 12, fontFamily: 'DM Mono, monospace' }}>
+              Searches careers pages, tailors your resume & cover letter, and finds contacts. Takes 1–2 min.
+            </p>
+          )}
 
           {runStatus === 'success' && (
             <div style={{
