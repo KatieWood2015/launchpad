@@ -12,13 +12,23 @@ export async function tailorResume(profile, job, outputDir) {
     max_tokens: 2000,
     messages: [{
       role: 'user',
-      content: `Reorder and trim resume bullets for: ${job.title} at ${job.company}. Requirements: ${job.keyRequirements.join(', ')}. Copy bullets EXACTLY, only reorder/remove to fit 1 page.
+      content: `Tailor this resume for: ${job.title} at ${job.company}. Requirements: ${job.keyRequirements.join(', ')}.
+
+CRITICAL FORMATTING RULES:
+- Copy ALL text EXACTLY as written — do not rewrite, rephrase, or paraphrase anything
+- Preserve the EXACT section order from the original resume (e.g. Experience before Education, or vice versa)
+- Preserve ALL section headers exactly as they appear (e.g. "EXPERIENCE", "EDUCATION", "SKILLS", "CERTIFICATIONS", etc.)
+- Keep every company name, job title, date range, and location EXACTLY as written
+- Keep ALL education entries, skills sections, and certifications — do NOT remove these
+- Only reorder bullets WITHIN a single role to put the most relevant ones first
+- Only remove bullets if needed to fit one page — remove the least relevant ones
+- Include ALL contact info fields exactly as they appear (name, email, phone, LinkedIn, address, etc.)
 
 RESUME:
 ${profile.resumeText}
 
 Return ONLY JSON:
-{"sections":[{"type":"header","name":"...","email":"...","phone":"...","address":"..."},{"type":"sectionTitle","text":"EDUCATION"},{"type":"role","company":"...","title":"...","location":"...","dates":"...","bullets":["exact bullet"]}],"bulletsRemoved":3,"removalReason":"brief"}`
+{"sections":[{"type":"header","name":"...","email":"...","phone":"...","linkedin":"...","address":"..."},{"type":"sectionTitle","text":"EXACT SECTION HEADER"},{"type":"education","school":"...","degree":"...","location":"...","dates":"...","details":["detail 1"]},{"type":"role","company":"...","title":"...","location":"...","dates":"...","bullets":["exact bullet copied verbatim"]},{"type":"skills","text":"exact skills text"}],"bulletsRemoved":0,"removalReason":"brief"}`
     }]
   }))
 
@@ -51,9 +61,10 @@ async function generateResumeDocx(structured, job, outputDir) {
         alignment: AlignmentType.CENTER,
         children: [new TextRun({ text: section.name, bold: true, size: 28, font: 'Calibri' })]
       }))
+      const contactParts = [section.email, section.phone, section.linkedin, section.address].filter(Boolean)
       children.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text: `${section.email}  |  ${section.phone}  |  ${section.address}`, size: 18, font: 'Calibri' })]
+        children: [new TextRun({ text: contactParts.join('  |  '), size: 18, font: 'Calibri' })]
       }))
       children.push(new Paragraph({
         border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '000000' } },
@@ -65,6 +76,31 @@ async function generateResumeDocx(structured, job, outputDir) {
         border: { bottom: { style: BorderStyle.SINGLE, size: 2, color: '000000' } },
         children: [new TextRun({ text: section.text, bold: true, size: 20, font: 'Calibri', allCaps: true })]
       }))
+    } else if (section.type === 'education') {
+      children.push(new Paragraph({
+        spacing: { before: 100, after: 0 },
+        tabStops: [{ type: 'right', position: 9360 }],
+        children: [
+          new TextRun({ text: section.school, bold: true, size: 20, font: 'Calibri' }),
+          new TextRun({ text: `\t${section.dates || ''}`, size: 20, font: 'Calibri' })
+        ]
+      }))
+      if (section.degree) {
+        children.push(new Paragraph({
+          spacing: { before: 0, after: 40 },
+          tabStops: [{ type: 'right', position: 9360 }],
+          children: [
+            new TextRun({ text: section.degree, italics: true, size: 20, font: 'Calibri' }),
+            new TextRun({ text: section.location ? `\t${section.location}` : '', size: 20, font: 'Calibri', italics: true })
+          ]
+        }))
+      }
+      for (const detail of (section.details || [])) {
+        children.push(new Paragraph({
+          spacing: { before: 0, after: 20 },
+          children: [new TextRun({ text: detail, size: 18, font: 'Calibri' })]
+        }))
+      }
     } else if (section.type === 'role') {
       children.push(new Paragraph({
         spacing: { before: 100, after: 0 },
@@ -89,6 +125,11 @@ async function generateResumeDocx(structured, job, outputDir) {
           children: [new TextRun({ text: bullet, size: 18, font: 'Calibri' })]
         }))
       }
+    } else if (section.type === 'skills') {
+      children.push(new Paragraph({
+        spacing: { before: 40, after: 40 },
+        children: [new TextRun({ text: section.text, size: 18, font: 'Calibri' })]
+      }))
     }
   }
 
