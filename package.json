@@ -4,6 +4,7 @@
   "description": "Your personal AI job search assistant",
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "sh -c 'pids=$(lsof -ti tcp:3000 -sTCP:LISTEN 2>/dev/null || true); if [ -n \"$pids\" ]; then echo \"Releasing port 3000 (PID: $pids)\"; kill $pids; sleep 1; fi; next dev'",
     "build": "next build",
     "start": "next start",
     "daily": "node src/lib/daily.js"
