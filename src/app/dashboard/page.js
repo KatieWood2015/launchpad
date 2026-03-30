@@ -11,7 +11,28 @@ export default function Dashboard() {
 
   useEffect(() => {
     setVisible(true)
-    setHasProfile(!!localStorage.getItem('launchpad_profile'))
+    const hydrateProfile = async () => {
+      const stored = localStorage.getItem('launchpad_profile')
+      if (stored) {
+        setHasProfile(true)
+        return
+      }
+
+      try {
+        const res = await fetch('/api/setup')
+        const data = await res.json()
+        if (res.ok && data?.profile) {
+          localStorage.setItem('launchpad_profile', JSON.stringify(data.profile))
+          setHasProfile(true)
+        } else {
+          setHasProfile(false)
+        }
+      } catch {
+        setHasProfile(false)
+      }
+    }
+
+    hydrateProfile()
   }, [])
 
   const triggerRun = async () => {
@@ -20,15 +41,14 @@ export default function Dashboard() {
     setRunError('')
     try {
       const stored = localStorage.getItem('launchpad_profile')
-      if (!stored) {
-        setRunStatus('no_profile')
-        setRunning(false)
-        return
-      }
+      const body = stored
+        ? { profile: JSON.parse(stored) }
+        : {}
+
       const res = await fetch('/api/run-daily', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile: JSON.parse(stored) }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (data.ok) {
@@ -138,15 +158,6 @@ export default function Dashboard() {
               maxWidth: 360, margin: '16px auto 0'
             }}>
               ✅ Done! Check your inbox for the digest.
-            </div>
-          )}
-          {runStatus === 'no_profile' && (
-            <div style={{
-              background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)',
-              borderRadius: 8, padding: '12px 20px', color: '#f87171', fontSize: 13,
-              maxWidth: 400, margin: '16px auto 0'
-            }}>
-              Profile not found. Please <Link href="/setup" style={{ color: '#f87171', textDecoration: 'underline' }}>re-run setup</Link> to save your profile.
             </div>
           )}
           {runStatus === 'error' && (

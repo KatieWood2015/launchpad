@@ -1,15 +1,7 @@
 import { NextResponse } from 'next/server'
 import { writeFile, readFile } from 'fs/promises'
-import { appendFileSync, mkdirSync } from 'fs'
 import path from 'path'
 import { ensureConfigDir, getProfilePath } from '../../../lib/paths.js'
-
-function debugLog(payload) {
-  try {
-    mkdirSync('/opt/cursor/logs', { recursive: true })
-    appendFileSync('/opt/cursor/logs/debug.log', JSON.stringify(payload) + '\n')
-  } catch {}
-}
 
 export async function GET() {
   try {
@@ -28,9 +20,6 @@ export async function GET() {
 export async function POST(request) {
   try {
     const formData = await request.formData()
-    // #region agent log
-    debugLog({ hypothesisId: 'H1', location: 'src/app/api/setup/route.js:10', message: 'setup POST entry', data: { hasResume: !!formData.get('resume'), fieldsPresent: ['name', 'email', 'digestEmail'].map(k => !!formData.get(k)) }, timestamp: Date.now() })
-    // #endregion
 
     let existingProfile = null
     try {
@@ -83,22 +72,13 @@ export async function POST(request) {
 
     // Save profile to disk (works locally and in GitHub Actions)
     await ensureConfigDir()
-    // #region agent log
-    debugLog({ hypothesisId: 'H1', location: 'src/app/api/setup/route.js:53', message: 'writing profile to disk', data: { profilePath: getProfilePath(), name: profile.name || null, email: profile.email || null }, timestamp: Date.now() })
-    // #endregion
     await writeFile(getProfilePath(), JSON.stringify(profile, null, 2))
-    // #region agent log
-    debugLog({ hypothesisId: 'H1', location: 'src/app/api/setup/route.js:56', message: 'profile write complete', data: { profilePath: getProfilePath(), targetCompaniesCount: Array.isArray(profile.targetCompanies) ? profile.targetCompanies.length : 0 }, timestamp: Date.now() })
-    // #endregion
 
     // Return profile (without secrets) so the client can store it for later use.
     // On Vercel, /tmp is ephemeral and may not survive between requests.
     const { anthropicApiKey, gmailUser, gmailAppPassword, ...clientProfile } = profile
     return NextResponse.json({ ok: true, profile: clientProfile })
   } catch (error) {
-    // #region agent log
-    debugLog({ hypothesisId: 'H1', location: 'src/app/api/setup/route.js:63', message: 'setup POST error', data: { error: error?.message || 'unknown' }, timestamp: Date.now() })
-    // #endregion
     console.error('Setup error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
