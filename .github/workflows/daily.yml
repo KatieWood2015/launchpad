@@ -19,9 +19,13 @@ jobs:
       - run: npm install
 
       - name: Load profile
+        env:
+          LAUNCHPAD_PROFILE: ${{ secrets.LAUNCHPAD_PROFILE }}
         run: |
           mkdir -p config
-          echo '${{ secrets.LAUNCHPAD_PROFILE }}' > config/profile.json
+          # Avoid shell-quoting bugs: echo '...' breaks if JSON contains apostrophes (e.g. O'Brien).
+          printf '%s' "$LAUNCHPAD_PROFILE" > config/profile.json
+          node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('config/profile.json','utf8')); console.log('profile.json: valid JSON')"
 
       - name: Run Launchpad
         run: node src/lib/daily.js
