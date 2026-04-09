@@ -4,6 +4,7 @@
   "description": "Your personal AI job search assistant",
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "sh -c 'pids=$(netstat -tlnp 2>/dev/null | awk '\\''/:3000[[:space:]]/ && /LISTEN/ { split($7,a,\"/\"); if (a[1] != \"-\" && a[1] != \"\") print a[1] }'\\'' | sort -u); if [ -n \"$pids\" ]; then echo \"Releasing port 3000 (PID: $pids)\"; kill $pids; sleep 1; fi; next dev'",
     "build": "next build",
     "start": "next start",
     "daily": "node src/lib/daily.js"

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 const STEPS = [
@@ -107,6 +107,7 @@ export default function Setup() {
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [existingResumeName, setExistingResumeName] = useState('')
 
   const [form, setForm] = useState({
     name: '',
@@ -125,13 +126,63 @@ export default function Setup() {
   })
   const [resumeFile, setResumeFile] = useState(null)
 
+  useEffect(() => {
+    let cancelled = false
+    const hydrateFromProfile = (profile) => {
+      if (!profile || cancelled) return
+      setForm(f => ({
+        ...f,
+        name: profile.name || '',
+        email: profile.email || '',
+        whyStatement: profile.whyStatement || '',
+        targetRoles: profile.targetRoles || '',
+        location: profile.location || '',
+        remotePreference: profile.remotePreference || 'hybrid',
+        minSalary: profile.minSalary || '',
+        levelPreference: profile.levelPreference || '',
+        culturePriorities: profile.culturePriorities || '',
+        industriesToAvoid: profile.industriesToAvoid || '',
+        targetCompanies: Array.isArray(profile.targetCompanies)
+          ? profile.targetCompanies.join(', ')
+          : (profile.targetCompanies || ''),
+        coverLetterText: profile.coverLetterText || '',
+        digestEmail: profile.digestEmail || profile.email || '',
+      }))
+      if (profile.resumeFileName) {
+        setExistingResumeName(profile.resumeFileName)
+      } else if (profile.resumePath) {
+        setExistingResumeName(profile.resumePath.split(/[\\/]/).pop() || 'Existing resume')
+      }
+    }
+
+    try {
+      const stored = localStorage.getItem('launchpad_profile')
+      if (stored) {
+        hydrateFromProfile(JSON.parse(stored))
+        return () => { cancelled = true }
+      }
+    } catch {}
+
+    fetch('/api/setup')
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load profile')))
+      .then(data => {
+        if (data?.profile) {
+          hydrateFromProfile(data.profile)
+          localStorage.setItem('launchpad_profile', JSON.stringify(data.profile))
+        }
+      })
+      .catch(() => {})
+
+    return () => { cancelled = true }
+  }, [])
+
   const update = (key, val) => setForm(f => ({ ...f, [key]: val }))
 
   const isStepValid = () => {
     if (step === 0) return form.name && form.email && form.whyStatement
     if (step === 1) return form.targetRoles && form.location && form.minSalary
     if (step === 2) return form.targetCompanies
-    if (step === 3) return resumeFile && form.coverLetterText
+    if (step === 3) return (resumeFile || existingResumeName) && form.coverLetterText
     if (step === 4) return form.digestEmail
     return true
   }
@@ -273,8 +324,11 @@ export default function Setup() {
         <FileUpload
           accept=".pdf,.docx"
           label="Drag & drop your resume here"
-          file={resumeFile}
-          onFile={setResumeFile}
+          file={resumeFile || (existingResumeName ? { name: existingResumeName } : null)}
+          onFile={(file) => {
+            setResumeFile(file)
+            if (file) setExistingResumeName('')
+          }}
         />
       </Field>
       <Field label="Cover letter template" hint={'Use [COMPANY] where the company name should appear, and [ROLE] for the job title. Include multiple body paragraphs — Launchpad selects the best ones per job.'}>

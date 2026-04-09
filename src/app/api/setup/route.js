@@ -1,11 +1,30 @@
 import { NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
+import { writeFile, readFile } from 'fs/promises'
 import path from 'path'
 import { ensureConfigDir, getProfilePath } from '../../../lib/paths.js'
+
+export async function GET() {
+  try {
+    const raw = await readFile(getProfilePath(), 'utf8')
+    const profile = JSON.parse(raw)
+    const { anthropicApiKey, gmailUser, gmailAppPassword, ...clientProfile } = profile
+    return NextResponse.json({ ok: true, profile: clientProfile })
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return NextResponse.json({ ok: true, profile: null })
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
 
 export async function POST(request) {
   try {
     const formData = await request.formData()
+
+    let existingProfile = null
+    try {
+      existingProfile = JSON.parse(await readFile(getProfilePath(), 'utf8'))
+    } catch {}
 
     // Extract text fields
     const profile = {
@@ -26,8 +45,8 @@ export async function POST(request) {
       anthropicApiKey: process.env.ANTHROPIC_API_KEY,
       gmailUser: process.env.GMAIL_USER,
       gmailAppPassword: process.env.GMAIL_APP_PASSWORD,
-      unsubscribeToken: Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2),
-      paused: false,
+      unsubscribeToken: existingProfile?.unsubscribeToken || (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)),
+      paused: existingProfile?.paused ?? false,
     }
 
     // Handle resume file
@@ -45,6 +64,10 @@ export async function POST(request) {
 
       // Extract text from resume for AI processing
       profile.resumeText = await extractResumeText(resumePath, ext)
+    } else if (existingProfile?.resumePath) {
+      profile.resumePath = existingProfile.resumePath
+      profile.resumeFileName = existingProfile.resumeFileName
+      profile.resumeText = existingProfile.resumeText
     }
 
     // Save profile to disk (works locally and in GitHub Actions)
