@@ -8,12 +8,15 @@ on:
 jobs:
   daily:
     runs-on: ubuntu-latest
+    env:
+      # Use Node 24 for JS-based actions before the June 2026 default (see GitHub changelog).
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - run: npm install
