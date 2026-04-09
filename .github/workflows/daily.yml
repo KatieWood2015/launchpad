@@ -19,6 +19,11 @@ jobs:
           node-version: '24'
           cache: 'npm'
 
+      - name: Verify Node 24 runtime
+        run: |
+          node -v
+          node -e "const major = Number(process.versions.node.split('.')[0]); if (major < 24) { throw new Error(`Expected Node >=24, got ${process.version}`) }"
+
       - run: npm install
 
       - name: Load profile
