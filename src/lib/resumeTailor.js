@@ -6,13 +6,7 @@ import path from 'path'
 
 export async function tailorResume(profile, job, outputDir) {
   const client = new Anthropic({ apiKey: profile.anthropicApiKey })
-
-  const response = await callWithRetry(() => client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 2000,
-    messages: [{
-      role: 'user',
-      content: `You are formatting a resume into structured JSON. The output must fit on ONE page.
+  const prompt = `You are formatting a resume into structured JSON. The output must fit on ONE page.
 
 TARGET JOB: ${job.title} at ${job.company}. Requirements: ${job.keyRequirements.join(', ')}
 
@@ -34,20 +28,39 @@ ${profile.resumeText}
 
 Return ONLY JSON. Every string value must be copied VERBATIM from the resume above:
 {"sections":[{"type":"header","name":"...","email":"...","phone":"...","linkedin":"...","address":"..."},{"type":"sectionTitle","text":"EXACT SECTION HEADER AS IT APPEARS"},{"type":"education","school":"...","degree":"...","location":"...","dates":"...","details":["exact detail"]},{"type":"role","company":"...","title":"...","location":"...","dates":"...","bullets":["exact bullet copied verbatim"]},{"type":"skills","text":"exact skills text as it appears"}],"bulletsRemoved":0,"removalReason":"which bullets were removed and why"}`
-    }]
-  }))
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const response = await callWithRetry(() => client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
+      messages: [{
+        role: 'user',
+        content: prompt
+      }]
+    }))
 
-  let structured
-  try {
-    const text = response.content[0].text
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    structured = JSON.parse(jsonMatch[0])
-  } catch (e) {
-    console.error('Failed to parse tailored resume:', e)
-    return null
+    let structured
+    try {
+      const text = response.content[0].text
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      structured = JSON.parse(jsonMatch[0])
+      if (!Array.isArray(structured?.sections)) {
+        throw new Error('Invalid resume structure: sections must be an array')
+      }
+      try {
+        return await generateResumeDocx(structured, job, outputDir)
+      } catch (error) {
+        console.error('Failed to generate tailored resume docx:', error)
+        return null
+      }
+    } catch (e) {
+      if (attempt === 2) {
+        console.error('Failed to parse tailored resume:', e)
+        return null
+      }
+    }
   }
 
-  return generateResumeDocx(structured, job, outputDir)
+  return null
 }
 
 async function generateResumeDocx(structured, job, outputDir) {

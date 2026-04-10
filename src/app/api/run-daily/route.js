@@ -21,7 +21,6 @@ export async function POST(request) {
         )
       }
     }
-
     // Inject server-side secrets (never trust client-sent credentials)
     profile.anthropicApiKey = process.env.ANTHROPIC_API_KEY
     profile.gmailUser = process.env.GMAIL_USER
