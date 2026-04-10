@@ -9,6 +9,7 @@ import nodemailer from 'nodemailer'
 // ─── COVER LETTER ────────────────────────────────────────────────────────────
 
 export async function tailorCoverLetter(profile, job, outputDir) {
+  const requirements = Array.isArray(job?.keyRequirements) ? job.keyRequirements : []
   const client = new Anthropic({ apiKey: profile.anthropicApiKey })
 
   const response = await callWithRetry(() => client.messages.create({
@@ -18,7 +19,7 @@ export async function tailorCoverLetter(profile, job, outputDir) {
       role: 'user',
       content: `Tailor a cover letter for ${job.title} at ${job.company}. The cover letter MUST fit on a single page.
 
-JOB: ${job.title} at ${job.company}. ${job.description}. Requirements: ${job.keyRequirements.join(', ')}
+JOB: ${job.title} at ${job.company}. ${job.description}. Requirements: ${requirements.join(', ')}
 
 CANDIDATE'S OWN WORDS (use ONLY facts from this): ${profile.whyStatement}
 
@@ -47,6 +48,9 @@ Return ONLY JSON:
     structured = JSON.parse(jsonMatch[0])
   } catch (e) {
     console.error('Failed to parse cover letter:', e)
+    return null
+  }
+  if (!Array.isArray(structured?.paragraphs)) {
     return null
   }
 
