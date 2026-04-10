@@ -11,6 +11,7 @@ jobs:
     env:
       # Use Node 24 for JS-based actions before the June 2026 default (see GitHub changelog).
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -27,10 +28,16 @@ jobs:
       - run: npm install
 
       - name: Load profile
+        if: ${{ env.DATABASE_URL == '' }}
         env:
           LAUNCHPAD_PROFILE: ${{ secrets.LAUNCHPAD_PROFILE }}
         run: |
           mkdir -p config
+          if [ -z "$LAUNCHPAD_PROFILE" ]; then
+            echo "LAUNCHPAD_PROFILE is empty and DATABASE_URL is not configured."
+            echo "Set secrets.DATABASE_URL to use app-stored profile data."
+            exit 1
+          fi
           # Avoid shell-quoting bugs: echo '...' breaks if JSON contains apostrophes (e.g. O'Brien).
           printf '%s' "$LAUNCHPAD_PROFILE" > config/profile.json
           node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('config/profile.json','utf8')); console.log('profile.json: valid JSON')"

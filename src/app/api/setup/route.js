@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server'
-import { writeFile, readFile } from 'fs/promises'
+import { writeFile } from 'fs/promises'
 import path from 'path'
-import { ensureConfigDir, getProfilePath } from '../../../lib/paths.js'
+import { ensureConfigDir } from '../../../lib/paths.js'
+import { loadProfile, saveProfile } from '../../../lib/profileStore.js'
 
 export async function GET() {
   try {
-    const raw = await readFile(getProfilePath(), 'utf8')
-    const profile = JSON.parse(raw)
+    const profile = await loadProfile()
+    if (!profile) {
+      return NextResponse.json({ ok: true, profile: null })
+    }
     const { anthropicApiKey, gmailUser, gmailAppPassword, ...clientProfile } = profile
     return NextResponse.json({ ok: true, profile: clientProfile })
   } catch (error) {
-    if (error?.code === 'ENOENT') {
-      return NextResponse.json({ ok: true, profile: null })
-    }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
@@ -21,10 +21,7 @@ export async function POST(request) {
   try {
     const formData = await request.formData()
 
-    let existingProfile = null
-    try {
-      existingProfile = JSON.parse(await readFile(getProfilePath(), 'utf8'))
-    } catch {}
+    const existingProfile = await loadProfile()
 
     // Extract text fields
     const profile = {
@@ -71,8 +68,7 @@ export async function POST(request) {
     }
 
     // Save profile to disk (works locally and in GitHub Actions)
-    await ensureConfigDir()
-    await writeFile(getProfilePath(), JSON.stringify(profile, null, 2))
+    await saveProfile(profile)
 
     // Return profile (without secrets) so the client can store it for later use.
     // On Vercel, /tmp is ephemeral and may not survive between requests.

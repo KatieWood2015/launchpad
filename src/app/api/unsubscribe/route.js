@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { readFile, writeFile } from 'fs/promises'
-import { getProfilePath } from '../../../lib/paths.js'
+import { loadProfile, patchProfile } from '../../../lib/profileStore.js'
 
 export async function GET(request) {
   try {
@@ -8,21 +7,24 @@ export async function GET(request) {
     const token = searchParams.get('token')
     const action = searchParams.get('action') || 'pause'
 
-    const profilePath = getProfilePath()
-    const profile = JSON.parse(await readFile(profilePath, 'utf8'))
+    const profile = await loadProfile()
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
 
     // Validate token
     if (token !== profile.unsubscribeToken) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    if (action === 'pause') {
-      profile.paused = true
-    } else if (action === 'resume') {
-      profile.paused = false
-    }
-
-    await writeFile(profilePath, JSON.stringify(profile, null, 2))
+    await patchProfile((current) => {
+      if (action === 'pause') {
+        current.paused = true
+      } else if (action === 'resume') {
+        current.paused = false
+      }
+      return current
+    })
 
     // Redirect to settings page with status
     const base = request.nextUrl.origin
