@@ -4,12 +4,13 @@
  * node src/lib/daily.js
  */
 
-import { readFile, mkdir } from 'fs/promises'
+import { mkdir } from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { findJobs } from './jobSearch.js'
 import { tailorResume } from './resumeTailor.js'
 import { tailorCoverLetter, findOutreachTargets, sendDigest } from './pipeline.js'
+import { loadProfile } from './profileStore.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -17,8 +18,17 @@ async function run() {
   console.log('\n🚀 LAUNCHPAD — Daily Run')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
 
-  const profilePath = path.join(__dirname, '../../config/profile.json')
-  const profile = JSON.parse(await readFile(profilePath, 'utf8'))
+  const profile = await loadProfile()
+  if (!profile) {
+    throw new Error('No profile found in database or config/profile.json')
+  }
+  // Prefer runtime environment secrets when available.
+  profile.anthropicApiKey = process.env.ANTHROPIC_API_KEY || profile.anthropicApiKey
+  profile.gmailUser = process.env.GMAIL_USER || profile.gmailUser
+  profile.gmailAppPassword = process.env.GMAIL_APP_PASSWORD || profile.gmailAppPassword
+  if (!profile.anthropicApiKey || !profile.gmailUser || !profile.gmailAppPassword) {
+    throw new Error('Missing credentials: set ANTHROPIC_API_KEY, GMAIL_USER, and GMAIL_APP_PASSWORD')
+  }
   console.log(`👤 ${profile.name}`)
 
   const today = new Date().toISOString().split('T')[0]

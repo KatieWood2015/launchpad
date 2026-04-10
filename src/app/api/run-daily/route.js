@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { readFile } from 'fs/promises'
-import { getProfilePath, ensureOutputDir } from '../../../lib/paths.js'
+import { ensureOutputDir } from '../../../lib/paths.js'
+import { loadProfile } from '../../../lib/profileStore.js'
 
 export async function POST(request) {
   try {
@@ -13,7 +13,13 @@ export async function POST(request) {
     } catch {}
 
     if (!profile) {
-      profile = JSON.parse(await readFile(getProfilePath(), 'utf8'))
+      profile = await loadProfile()
+      if (!profile) {
+        return NextResponse.json(
+          { ok: false, error: 'No saved profile found. Complete setup first.' },
+          { status: 400 }
+        )
+      }
     }
 
     // Inject server-side secrets (never trust client-sent credentials)

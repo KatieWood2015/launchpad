@@ -77,8 +77,10 @@ Visit your deployed app and complete the 5-step setup:
 
 1. Push to a **private** GitHub repo
 2. Go to Settings → Secrets → Actions → New secret
-3. Name: `LAUNCHPAD_PROFILE` / Value: contents of `config/profile.json`
+3. Name: `DATABASE_URL` / Value: your app database connection string
 4. Enable Actions → it runs at 7am PT every weekday
+
+Legacy fallback (optional): if `DATABASE_URL` is not set, workflow will fall back to `LAUNCHPAD_PROFILE`.
 
 To run immediately: Actions tab → Launchpad Daily Digest → Run workflow
 
@@ -137,7 +139,7 @@ launchpad/
 
 **Change the model:** Edit `claude-sonnet-4-20250514` in the lib files (Haiku is cheaper; Opus is more powerful)
 
-**Add more companies:** Re-run setup or edit `config/profile.json` and update your GitHub secret
+**Add more companies:** Re-run setup in the app (stored in DB) or edit `config/profile.json` for local fallback mode
 
 ---
 
