@@ -1,9 +1,13 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { callWithRetry } from './rateLimitHelper.js'
+import { jobFingerprint } from './jobPostingVerify.js'
 
-export async function findJobs(profile) {
+export async function findJobs(profile, options = {}) {
+  const { excludeUrlKeys = new Set(), extraSlots = 0 } = options
   const client = new Anthropic({ apiKey: profile.anthropicApiKey })
-  const companiesList = profile.targetCompanies.slice(0, 5).join(', ')
+  const companies = Array.isArray(profile?.targetCompanies) ? profile.targetCompanies : []
+  const companiesList = companies.slice(0, 5).join(', ')
+  const excludeList = [...excludeUrlKeys].filter(Boolean).slice(0, 40)
 
   const searchResponse = await callWithRetry(() => client.messages.create({
     model: 'claude-haiku-4-5-20251001',
@@ -21,6 +25,9 @@ CANDIDATE:
 - Background: ${profile.resumeText ? profile.resumeText.slice(0, 500) : profile.whyStatement}
 
 COMPANIES TO SEARCH: ${companiesList}
+
+RECENTLY EMAILED (do NOT return these again; find different postings):
+${excludeList.length ? excludeList.map((k) => `- ${k}`).join('\n') : '- (none)'}
 
 CRITICAL RULES:
 - ONLY include jobs that are CURRENTLY accepting applications as of today (${new Date().toISOString().split('T')[0]})
@@ -40,7 +47,7 @@ INSTRUCTIONS:
 2. Verify the posting is currently live and accepting applications
 3. If a company has no current matching roles, move to the next one
 4. Also search for similar companies with matching roles
-5. Return the TOP 2 best-matching LIVE roles you find
+5. Return the TOP ${2 + extraSlots} best-matching LIVE roles you find (sorted best-first). The app will pick the first two that pass automated URL checks and are not in RECENTLY EMAILED.
 
 Return ONLY valid JSON, no other text:
 {"jobs":[{"company":"Company Name","title":"Job Title","url":"https://link-to-posting","location":"City, State or Remote","salary":"range or null","description":"2-3 sentence summary","keyRequirements":["req1","req2","req3"],"whyMatch":"Why this fits the candidate","matchScore":85,"isNewCompany":false}],"suggestedCompanies":["Similar Company A","Similar Company B"],"searchDate":"${new Date().toISOString().split('T')[0]}"}`
@@ -54,7 +61,15 @@ Return ONLY valid JSON, no other text:
 
   try {
     const jsonMatch = responseText.match(/\{[\s\S]*\}/)
-    if (jsonMatch) return JSON.parse(jsonMatch[0])
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0])
+      const jobs = Array.isArray(parsed?.jobs) ? parsed.jobs : []
+      const filtered = jobs.filter((j) => {
+        const key = jobFingerprint(j)
+        return key && !excludeUrlKeys.has(key)
+      })
+      return { ...parsed, jobs: filtered }
+    }
   } catch (e) {
     console.error('Failed to parse job search results:', e)
   }

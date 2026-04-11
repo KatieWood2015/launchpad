@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { ensureOutputDir } from '../../../lib/paths.js'
-import { loadProfile } from '../../../lib/profileStore.js'
+import { loadProfile, saveProfile } from '../../../lib/profileStore.js'
+import { pickVerifiedJobs, recentJobUrlKeys, recordSentJobs } from '../../../lib/jobPostingVerify.js'
 
 export async function POST(request) {
   try {
@@ -34,7 +35,8 @@ export async function POST(request) {
     const today = new Date().toISOString().split('T')[0]
     const outputDir = await ensureOutputDir(today)
 
-    const jobResults = await findJobs(profile)
+    const excludeKeys = recentJobUrlKeys(profile, 14)
+    let jobResults = await findJobs(profile, { excludeUrlKeys: excludeKeys, extraSlots: 4 })
     if (!jobResults.jobs?.length) {
       return NextResponse.json({
         ok: false,
@@ -42,24 +44,42 @@ export async function POST(request) {
       })
     }
 
+    let selected = await pickVerifiedJobs(jobResults.jobs, excludeKeys, 2)
+    if (!selected.length) {
+      jobResults = await findJobs(profile, { excludeUrlKeys: excludeKeys, extraSlots: 8 })
+      selected = await pickVerifiedJobs(jobResults?.jobs || [], excludeKeys, 2)
+    }
+    if (!selected.length) {
+      return NextResponse.json({
+        ok: false,
+        error: 'Could not verify any live job postings today (URLs may be stale or blocked). Try again later or broaden target companies.',
+      })
+    }
+
     const delay = (ms) => new Promise(r => setTimeout(r, ms))
 
     const processedJobs = []
-    for (const job of jobResults.jobs.slice(0, 2)) {
-      // Run sequentially to stay under rate limits
-      const resumePath = await tailorResume(profile, job, outputDir)
-      const coverLetterPath = await tailorCoverLetter(profile, job, outputDir)
-      await delay(5000)
-      const outreach = await findOutreachTargets(profile, job)
-      processedJobs.push({ ...job, resumePath, coverLetterPath, outreach })
-      if (processedJobs.length < jobResults.jobs.slice(0, 2).length) {
-        await delay(10000)
+    try {
+      for (const job of selected) {
+        // Run sequentially to stay under rate limits
+        const resumePath = await tailorResume(profile, job, outputDir)
+        const coverLetterPath = await tailorCoverLetter(profile, job, outputDir)
+        await delay(5000)
+        const outreach = await findOutreachTargets(profile, job)
+        processedJobs.push({ ...job, resumePath, coverLetterPath, outreach })
+        if (processedJobs.length < selected.length) {
+          await delay(10000)
+        }
+      }
+
+      await sendDigest(profile, { jobs: processedJobs, date: today })
+      return NextResponse.json({ ok: true, jobCount: processedJobs.length })
+    } finally {
+      if (processedJobs.length) {
+        recordSentJobs(profile, processedJobs)
+        await saveProfile(profile)
       }
     }
-
-    await sendDigest(profile, { jobs: processedJobs, date: today })
-
-    return NextResponse.json({ ok: true, jobCount: processedJobs.length })
   } catch (error) {
     console.error('Daily run error:', error)
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
