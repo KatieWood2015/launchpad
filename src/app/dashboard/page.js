@@ -11,28 +11,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     setVisible(true)
-    const hydrateProfile = async () => {
+    try {
       const stored = localStorage.getItem('launchpad_profile')
-      if (stored) {
-        setHasProfile(true)
-        return
-      }
-
-      try {
-        const res = await fetch('/api/setup')
-        const data = await res.json()
-        if (res.ok && data?.profile) {
-          localStorage.setItem('launchpad_profile', JSON.stringify(data.profile))
-          setHasProfile(true)
-        } else {
-          setHasProfile(false)
-        }
-      } catch {
-        setHasProfile(false)
-      }
+      setHasProfile(!!stored)
+    } catch {
+      setHasProfile(false)
     }
-
-    hydrateProfile()
   }, [])
 
   const triggerRun = async () => {

@@ -159,19 +159,8 @@ export default function Setup() {
       const stored = localStorage.getItem('launchpad_profile')
       if (stored) {
         hydrateFromProfile(JSON.parse(stored))
-        return () => { cancelled = true }
       }
     } catch {}
-
-    fetch('/api/setup')
-      .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load profile')))
-      .then(data => {
-        if (data?.profile) {
-          hydrateFromProfile(data.profile)
-          localStorage.setItem('launchpad_profile', JSON.stringify(data.profile))
-        }
-      })
-      .catch(() => {})
 
     return () => { cancelled = true }
   }, [])

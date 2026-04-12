@@ -4,19 +4,6 @@ import path from 'path'
 import { ensureConfigDir } from '../../../lib/paths.js'
 import { loadProfile, saveProfile } from '../../../lib/profileStore.js'
 
-export async function GET() {
-  try {
-    const profile = await loadProfile()
-    if (!profile) {
-      return NextResponse.json({ ok: true, profile: null })
-    }
-    const { anthropicApiKey, gmailUser, gmailAppPassword, ...clientProfile } = profile
-    return NextResponse.json({ ok: true, profile: clientProfile })
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-}
-
 export async function POST(request) {
   try {
     const formData = await request.formData()
